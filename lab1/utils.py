@@ -1,39 +1,51 @@
-import torch
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import f1_score, confusion_matrix
+import numpy as np
 
-def calculate_accuracy(y_true, y_pred):
-    return (y_true == y_pred).sum().item() / len(y_true)
+def measurement(outputs, labels, smooth=1e-10):
+    tp, tn, fp, fn = smooth, smooth, smooth, smooth
+    labels = labels.cpu().numpy()
+    outputs = outputs.detach().cpu().clone().numpy()
+    for j in range(labels.shape[0]):
+        if outputs[j] == 1 and labels[j] == 1:
+            tp += 1
+        elif outputs[j] == 0 and labels[j] == 0:
+            tn += 1
+        elif outputs[j] == 1 and labels[j] == 0:
+            fp += 1
+        elif outputs[j] == 0 and labels[j] == 1:
+            fn += 1
+    return tp, tn, fp, fn
 
-def calculate_f1(y_true, y_pred):
-    return f1_score(y_true, y_pred, average="weighted")
-
-def plot_metrics(train_acc, train_f1, val_acc=None, val_f1=None):
-    epochs = range(1, len(train_acc) + 1)
-
+def plot_accuracy(train_acc_list, val_acc_list):
     plt.figure()
-    plt.plot(epochs, train_acc, label="Train Accuracy")
-    if val_acc: plt.plot(epochs, val_acc, label="Val Accuracy")
+    plt.plot(train_acc_list, label="Train Accuracy")
+    if len(val_acc_list) > 0:
+        plt.plot(val_acc_list, label="Val Accuracy")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy (%)")
+    plt.title("Training vs Validation Accuracy")
     plt.legend()
-    plt.xlabel("Epochs"); plt.ylabel("Accuracy"); plt.title("Accuracy Trend")
+    plt.savefig("accuracy_curve.png")
     plt.show()
 
+def plot_f1_score(f1_score_list):
     plt.figure()
-    plt.plot(epochs, train_f1, label="Train F1")
-    if val_f1: plt.plot(epochs, val_f1, label="Val F1")
+    plt.plot(f1_score_list, label="F1 Score", color="green")
+    plt.xlabel("Epoch")
+    plt.ylabel("F1 Score")
+    plt.title("F1 Score Curve")
     plt.legend()
-    plt.xlabel("Epochs"); plt.ylabel("F1-score"); plt.title("F1 Trend")
+    plt.savefig("f1_curve.png")
     plt.show()
 
-def plot_confusion_matrix(y_true, y_pred, class_names):
-    cm = confusion_matrix(y_true, y_pred)
-    plt.figure(figsize=(6,5))
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
-                xticklabels=class_names,
-                yticklabels=class_names)
+def plot_confusion_matrix(confusion_matrix):
+    plt.figure(figsize=(6, 6))
+    sns.heatmap(confusion_matrix, annot=True, fmt="d", cmap="Blues",
+                xticklabels=["NORMAL", "PNEUMONIA"],
+                yticklabels=["NORMAL", "PNEUMONIA"])
     plt.xlabel("Predicted")
     plt.ylabel("True")
     plt.title("Confusion Matrix")
+    plt.savefig("confusion_matrix.png")
     plt.show()

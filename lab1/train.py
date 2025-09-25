@@ -1,60 +1,98 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
+from argparse import ArgumentParser
+from tqdm import tqdm
+
 from dataloader import get_dataloaders
 from models import get_model
-from utils import calculate_accuracy, calculate_f1, plot_metrics
+from utils import measurement, plot_accuracy, plot_f1_score, plot_confusion_matrix
 
-def train(train_dir, test_dir, val_dir=None, model_name="resnet18", epochs=10, batch_size=32, lr=0.001):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # dataloaders
-    train_loader, val_loader, test_loader = get_dataloaders(train_dir, test_dir, val_dir, batch_size)
+def test(loader, model, device):
+    tp, tn, fp, fn = 0, 0, 0, 0
+    with torch.no_grad():
+        model.eval()
+        for images, labels in loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            outputs = torch.max(outputs, 1).indices
+            sub_tp, sub_tn, sub_fp, sub_fn = measurement(outputs, labels)
+            tp += sub_tp; tn += sub_tn; fp += sub_fp; fn += sub_fn
 
-    # model
-    model = get_model(model_name, num_classes=2).to(device)
+    c_matrix = [[int(tp), int(fn)],
+                [int(fp), int(tn)]]
 
-    # loss & optimizer
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    acc = (tp + tn) / (tp + tn + fp + fn) * 100
+    f1 = (2 * tp) / (2 * tp + fp + fn)
+    return acc, f1, c_matrix
 
-    train_acc, train_f1 = [], []
-    val_acc, val_f1 = [], []
 
-    for epoch in range(epochs):
+def train(device, train_loader, val_loader, model, criterion, optimizer, args):
+    best_acc = 0.0
+    train_acc_list, val_acc_list, f1_score_list = [], [], []
+    best_c_matrix = []
+
+    for epoch in range(1, args.num_epochs + 1):
         model.train()
-        running_loss = 0.0
-        y_true, y_pred = [], []
-
-        for inputs, labels in train_loader:
+        tp, tn, fp, fn = 0, 0, 0, 0
+        for inputs, labels in tqdm(train_loader):
             inputs, labels = inputs.to(device), labels.to(device)
-
             optimizer.zero_grad()
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
 
-            _, preds = torch.max(outputs, 1)
-            y_true.extend(labels.cpu().numpy())
-            y_pred.extend(preds.cpu().numpy())
+            outputs = torch.max(outputs, 1).indices
+            sub_tp, sub_tn, sub_fp, sub_fn = measurement(outputs, labels)
+            tp += sub_tp; tn += sub_tn; fp += sub_fp; fn += sub_fn
 
-            running_loss += loss.item()
+        train_acc = (tp + tn) / (tp + tn + fp + fn) * 100
+        print(f"Epoch {epoch} - Train Acc: {train_acc:.2f}%")
+        train_acc_list.append(train_acc)
 
-        acc = calculate_accuracy(np.array(y_true), np.array(y_pred))
-        f1 = calculate_f1(np.array(y_true), np.array(y_pred))
-        train_acc.append(acc)
-        train_f1.append(f1)
+        if val_loader is not None:
+            val_acc, f1, c_matrix = test(val_loader, model, device)
+            val_acc_list.append(val_acc)
+            f1_score_list.append(f1)
+            print(f"↳ Val Acc: {val_acc:.2f}%, F1: {f1:.4f}")
 
-        print(f"Epoch {epoch+1}/{epochs} - Loss: {running_loss:.4f} - Acc: {acc:.4f} - F1: {f1:.4f}")
+            if val_acc > best_acc:
+                best_acc = val_acc
+                best_c_matrix = c_matrix
+                torch.save(model.state_dict(), f"{args.arch}_best.pth")
 
-        # (可加驗證 val_loader)
+    return train_acc_list, val_acc_list, f1_score_list, best_c_matrix
 
-    plot_metrics(train_acc, train_f1, val_acc, val_f1)
-
-    # 存模型
-    torch.save(model.state_dict(), f"{model_name}_best.pth")
 
 if __name__ == "__main__":
-    train("chest_xray/train", "chest_xray/test", "chest_xray/val", model_name="resnet18", epochs=5)
+    parser = ArgumentParser()
+    parser.add_argument("--arch", type=str, default="resnet18", choices=["resnet18", "resnet50"])
+    parser.add_argument("--dataset", type=str, default="chest_xray")
+    parser.add_argument("--num_epochs", type=int, default=10)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--lr", type=float, default=1e-4)
+    args = parser.parse_args()
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    train_loader, val_loader, test_loader = get_dataloaders(args.dataset, batch_size=args.batch_size)
+    model = get_model(args.arch, num_classes=2).to(device)
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+
+    train_acc_list, val_acc_list, f1_score_list, best_c_matrix = train(
+        device, train_loader, val_loader, model, criterion, optimizer, args
+    )
+
+    print("\n### Final Evaluation on Test Dataset ###")
+    test_acc, f1, test_c_matrix = test(test_loader, model, device)
+    print(f"Test Acc: {test_acc:.2f}%, F1: {f1:.4f}")
+
+    plot_accuracy(train_acc_list, val_acc_list)
+    if len(f1_score_list) > 0:
+        plot_f1_score(f1_score_list)
+    plot_confusion_matrix(test_c_matrix)
+    
