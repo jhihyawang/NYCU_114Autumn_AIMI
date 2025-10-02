@@ -1,32 +1,37 @@
+import os
 import torch
-from PIL import Image
+import torch.nn as nn
+from torchvision import models
 from argparse import ArgumentParser
 
-from models import get_model
-from dataloader import get_transform
-
-
-def predict(img_path, model, device):
-    transform = get_transform(train=False)
-    img = Image.open(img_path).convert("RGB")
-    img = transform(img).unsqueeze(0).to(device)
-    with torch.no_grad():
-        outputs = model(img)
-        _, pred = torch.max(outputs, 1)
-    return "NORMAL" if pred.item() == 0 else "PNEUMONIA"
+from dataloader import get_dataloaders
+from utils import test, plot_confusion_matrix
 
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--arch", type=str, default="resnet18", choices=["resnet18", "resnet50"])
-    parser.add_argument("--weights", type=str, default="resnet18_best.pth")
-    parser.add_argument("--img", type=str, required=True)
+    parser.add_argument("--model", default="resnet18", choices=["resnet18", "resnet50"])
+    parser.add_argument("--dataset", default="chest_xray")
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = get_model(args.arch, num_classes=2, pretrained=False).to(device)
-    model.load_state_dict(torch.load(args.weights, map_location=device))
-    model.eval()
+    print(f"## Using device: {device} ##")
 
-    result = predict(args.img, model, device)
-    print("Prediction:", result)
+    # dataloaders
+    _, _, test_loader = get_dataloaders(
+        data_dir=args.dataset, batch_size=32, resize=224, degree=10
+    )
+
+    # model
+    model = models.resnet18(pretrained=False) if args.model == "resnet18" else models.resnet50(pretrained=False)
+    model.fc = nn.Linear(model.fc.in_features, 2)
+    model.load_state_dict(torch.load(f"{args.model}_best.pt", map_location=device))
+    model = model.to(device)
+
+    # test
+    acc, f1, c_matrix = test(test_loader, model, device)
+    print(f"### Final Test Evaluation ###")
+    print(f"Test Acc: {acc:.2f}%, F1: {f1:.4f}")
+
+    # confusion matrix
+    plot_confusion_matrix(c_matrix)
