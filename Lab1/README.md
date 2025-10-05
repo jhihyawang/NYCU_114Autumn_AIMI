@@ -96,21 +96,73 @@ uv run code/train.py \
 - `--resize`: Image resize dimension (default: 224)
 - `--degree`: Rotation degree for data augmentation (default: 10)
 
+
 ## 🔍 Inference
 
-After training, evaluate the model on the test set:
+### Using Pretrained Weights
+
+If you want to use the pretrained model weights without training from scratch:
+
+1. **Download the pretrained weights** from Google Drive:
+   - [Download Model Weights (All 4 Models)](https://drive.google.com/file/d/1_mWGctchyNjOzfA4U_mweIOWIIzl0LiO/view?usp=sharing)
+   - Includes: `resnet18_best.pt`, `resnet50_best.pt`, `vit_base_patch16_224_best.pt`, `densenet121_best.pt`
+
+2. **Place the weights in the correct directory**:
+   ```bash
+   mkdir -p weight
+   # Extract and move all .pt files to the weight folder
+   # Or move specific model weights you want to use
+   ```
+
+3. **Run inference** (choose your model):
+   ```bash
+   # For ResNet50 (Best performance: 91.67%)
+   python inference.py --model resnet50
+   
+   # For ResNet18 (91.51%)
+   python inference.py --model resnet18
+   
+   # For Vision Transformer (90.71%)
+   python inference.py --model vit_base_patch16_224
+   
+   # For DenseNet121 (87.82%)
+   python inference.py --model densenet121
+   ```
+
+### Training Your Own Model
+
+After training your model using `train.py`, evaluate it on the test set:
 
 ```bash
-uv run code/inference.py --model resnet18
+python inference.py --model <model_name>
 ```
 
+Make sure the model name matches the one you trained.
+
 ## 📈 Results
+
+### Model Performance Summary
+
+| Model | Test Accuracy | F1-Score | Recall | Precision |
+|-------|--------------|----------|---------|-----------|
+| **ResNet50** | **91.67%** | **0.9364** | **0.9821** | 0.8949 |
+| ResNet18 | 91.51% | 0.9351 | 0.9795 | 0.8946 |
+| ViT-Base | 90.71% | 0.9293 | 0.9769 | 0.8860 |
+| DenseNet121 | 87.82% | 0.9102 | **0.9872** | 0.8443 |
+
+**Best Performing Model**: ResNet50 (91.67% accuracy, 0.9364 F1-score)
+
+**Key Highlights**:
+- All ResNet and ViT models achieve >90% accuracy, meeting lab requirements
+- Exceptional recall across all models (>97%), indicating strong pneumonia detection capability
+- DenseNet121 achieves highest recall (98.72%) with trade-off in precision
+- ResNet50 offers best balance between precision and recall
 
 The training process generates the following outputs in `result/<model_name>/`:
 
 1. **accuracy_curve.png**: Training and validation accuracy over epochs
-2. **f1_score_curve.png**: Validation f1-score over epochs
-3. **confusion_matrix.png**: Confusion matrix of the final results (test_dataset)
+2. **f1_score_curve.png**: F1-score over epochs
+3. **confusion_matrix.png**: Confusion matrix of the final results
 
 Model weights are saved in `weight/<model_name>_best.pt`
 
