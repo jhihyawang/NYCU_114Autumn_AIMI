@@ -13,7 +13,7 @@ This project implements a deep learning solution for classifying pneumonia from 
 This project uses `uv` for Python environment management.
 
 ### Prerequisites
-- Python 3.8+
+- Python 3.10.12
 - CUDA-capable GPU (recommended)
 - `uv` package manager
 
