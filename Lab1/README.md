@@ -101,7 +101,7 @@ uv run code/train.py \
 After training, evaluate the model on the test set:
 
 ```bash
-uv run code/inference.py --model resnet18 --batch_size 128
+uv run code/inference.py --model resnet18
 ```
 
 ## 📈 Results
@@ -163,6 +163,7 @@ This project is for educational purposes as part of a deep learning lab assignme
 ## 👤 Author
  
 **Name**: Jhihya Wang
+
 **Course**: NYCU 2025 Autumn AIMI
 
 ## 📧 Contact
