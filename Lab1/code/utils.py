@@ -7,10 +7,10 @@ import seaborn as sns
 import random
 
 def set_seed(seed=39):
-    random.seed(seed)                # Python 隨機
-    np.random.seed(seed)             # Numpy 隨機
-    torch.manual_seed(seed)          # PyTorch CPU
-    torch.cuda.manual_seed(seed)     # 單GPU
+    random.seed(seed)
+    np.random.seed(seed)             
+    torch.manual_seed(seed)          
+    torch.cuda.manual_seed(seed)     
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
