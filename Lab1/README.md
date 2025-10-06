@@ -1,6 +1,6 @@
 # Lab1 : Pneumonia Classification from Chest X-ray Images
 
-This project implements a deep learning solution for classifying pneumonia from chest X-ray images using ResNet architectures and other models.
+This lab implements a deep learning solution for classifying pneumonia from chest X-ray images using ResNet architectures and other models.
 
 ## 📋 Project Overview
 
@@ -49,7 +49,7 @@ uv sync
 │   ├── train/
 │   │   ├── NORMAL/
 │   │   └── PNEUMONIA/
-│   ├── val/              # Optional
+│   ├── val/
 │   │   ├── NORMAL/
 │   │   └── PNEUMONIA/
 │   └── test/
@@ -99,9 +99,9 @@ uv run code/train.py \
 
 ## 🔍 Inference
 
-### Using Pretrained Weights
+### Using Trained Weights
 
-If you want to use the pretrained model weights without training from scratch:
+If you want to use the trained model weights without training from scratch:
 
 1. **Download the pretrained weights** from Google Drive:
    - [Download Model Weights (All 4 Models)](https://drive.google.com/file/d/1_mWGctchyNjOzfA4U_mweIOWIIzl0LiO/view?usp=sharing)
@@ -152,12 +152,6 @@ Make sure the model name matches the one you trained.
 
 **Best Performing Model**: ResNet50 (91.67% accuracy, 0.9364 F1-score)
 
-**Key Highlights**:
-- All ResNet and ViT models achieve >90% accuracy, meeting lab requirements
-- Exceptional recall across all models (>97%), indicating strong pneumonia detection capability
-- DenseNet121 achieves highest recall (98.72%) with trade-off in precision
-- ResNet50 offers best balance between precision and recall
-
 The training process generates the following outputs in `result/<model_name>/`:
 
 1. **accuracy_curve.png**: Training and validation accuracy over epochs
@@ -172,7 +166,7 @@ The custom dataloader includes:
 - Random resized crop (scale: 0.8-1.0)
 - Random rotation (default: ±10°)
 - Random horizontal flip (p=0.3)
-- Color jitter
+- Color jitter (brightness=0.05, contrast=0.05)
 - Random erasing (p=0.1)
 - ImageNet normalization
 
@@ -203,14 +197,6 @@ The best model is saved based on the lowest validation loss with early stopping 
 
 - Random seed is set to 39 for reproducibility
 - The model automatically uses GPU if available
-
-## 🤝 Contributing
-
-Feel free to open issues or submit pull requests for improvements.
-
-## 📄 License
-
-This project is for educational purposes as part of a deep learning lab assignment.
 
 ## 👤 Author
  
