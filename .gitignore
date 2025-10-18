@@ -1,0 +1,10 @@
+.venv
+*.gdf
+*.zip
+uv.lock
+weights/
+*.pdf
+*.pyc
+__pycache__/
+*.pth
+*.pt
