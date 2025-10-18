@@ -1,6 +1,3 @@
-好的 👍 這裡給你一份 **README.md 的 Markdown 版本**，可以直接存成 `README.md` 使用：
-
-```markdown
 # Lab1 - Pneumonia Classification (Chest X-ray)
 
 ## 📌 專案目標

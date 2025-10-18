@@ -32,12 +32,14 @@ class ChestXrayDataset(Dataset):
 def get_transform(train=True, resize=224, degree=10):
     if train:
         return transforms.Compose([
-            transforms.Resize((resize, resize)),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomRotation(degree),
+            transforms.RandomResizedCrop(resize, scale=(0.8, 1.0)),
+            transforms.RandomRotation(degrees=10),
+            transforms.RandomHorizontalFlip(p=0.3),
+            transforms.ColorJitter(brightness=0.1, contrast=0.1),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406],
-                                 [0.229, 0.224, 0.225])
+                                 [0.229, 0.224, 0.225]),
+            transforms.RandomErasing(p=0.1)
         ])
     else:
         return transforms.Compose([
@@ -46,7 +48,6 @@ def get_transform(train=True, resize=224, degree=10):
             transforms.Normalize([0.485, 0.456, 0.406],
                                  [0.229, 0.224, 0.225])
         ])
-
 
 # 建立 train / val / test dataloader
 def get_dataloaders(data_dir="chest_xray", batch_size=32, resize=224, degree=10):

@@ -3,6 +3,20 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
 
+def test(loader, model, device):
+    tp, tn, fp, fn = 0, 0, 0, 0
+    with torch.no_grad():
+        model.eval()
+        for imgs, labels in loader:
+            imgs, labels = imgs.to(device), labels.to(device)
+            preds = torch.max(model(imgs), 1).indices
+            sub_tp, sub_tn, sub_fp, sub_fn = measurement(preds, labels)
+            tp += sub_tp; tn += sub_tn; fp += sub_fp; fn += sub_fn
+    acc = (tp + tn) / (tp + tn + fp + fn) * 100
+    f1 = (2 * tp) / (2 * tp + fp + fn)
+    c_matrix = [[int(tn), int(fp)], [int(fn), int(tp)]]
+    return acc, f1, c_matrix
+
 def measurement(outputs, labels, smooth=1e-10):
     tp, tn, fp, fn = smooth, smooth, smooth, smooth
     labels = labels.cpu().numpy()
