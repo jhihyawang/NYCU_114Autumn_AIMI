@@ -170,7 +170,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-num_epochs", type=int, default=150)
     parser.add_argument("-batch_size", type=int, default=64)
-    parser.add_argument("-lr", type=float, default=1e-2)
+    parser.add_argument("-lr", type=float, default=1e-3)
     # 39:82.5%, 42:82.59% ,123:81.94% ,456:83.70% ,789:83.33%
     parser.add_argument("-seed", type=int, default=456, help="Random seed for reproducibility")
     parser.add_argument("-patience", type=int, default=20, help="Early stopping patience (epochs)")
@@ -192,12 +192,12 @@ if __name__ == '__main__':
     if args.model == "EEGNet":
         model = EEGNet(num_classes=2)
     else:
-        model = DeepConvNet(num_classes=2)
+        model = DeepConvNet(num_classes=2, dropout_rate=0.5)
     
-    criterion = nn.CrossEntropyLoss()
-    #criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+    #criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     #optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=0.001)
-    optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
+    optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.001)
     model.to(device)
     criterion.to(device)
 
