@@ -1,0 +1,11 @@
+Experiment ID: EEGNet_optAdamW_bs32_lr0.0007_dp0.25_ep200_wd1e-4
+Model: EEGNet
+Optimizer: AdamW
+Learning Rate: 0.0007
+Batch Size: 32
+Epochs: 200
+Weight Decay: 0.0001
+Dropout: 0.25
+Device: cuda
+Final Test Accuracy: 84.72%
+Best Test Accuracy: 85.65%

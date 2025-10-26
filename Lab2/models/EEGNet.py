@@ -1,14 +1,7 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 class EEGNet(nn.Module):
-    """
-    EEGNet implementation based on:
-    Lawhern et al., 'EEGNet: A Compact Convolutional Neural Network for EEG-based Brain-Computer Interfaces' (2018)
-    (Version matched to screenshot reference)
-    """
-
     def __init__(self, num_classes=2, Chans=2, Samples=750, dropout_rate=0.25):
         super(EEGNet, self).__init__()
 

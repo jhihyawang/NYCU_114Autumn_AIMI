@@ -63,7 +63,7 @@ def plot_test_acc(test_acc_list, epochs, saving_dir='results/'):
     plt.savefig(f'{saving_dir}/test_acc.png')
     plt.close()
 
-def train(model, loader, criterion, optimizer, args):
+def train(model, loader, test_loader, criterion, optimizer, args, device):
     best_acc = 0.0
     best_wts = None
     avg_acc_list = []
@@ -96,18 +96,18 @@ def train(model, loader, criterion, optimizer, args):
             print(f'Loss: {avg_loss}')
             print(f'Training Acc. (%): {avg_acc:3.2f}%')
 
-        test_acc = test(model, test_loader)
+        test_acc = test(model, test_loader, device)
         test_acc_list.append(test_acc)
         if test_acc > best_acc:
             best_acc = test_acc
             best_wts = model.state_dict()
         print(f'Test Acc. (%): {test_acc:3.2f}%')
 
-    torch.save(best_wts, './weights/best.pt')
+    torch.save(best_wts, f'{args.saving_dir}/best.pt')
     return avg_acc_list, avg_loss_list, test_acc_list
 
 
-def test(model, loader):
+def test(model, loader, device):
     avg_acc = 0.0
     model.eval()
     with torch.set_grad_enabled(False):
@@ -133,12 +133,20 @@ if __name__ == '__main__':
     parser.add_argument("-weight_decay", type=float, default=1e-4)
     parser.add_argument("-dropout", type=float, default=0.5)
     parser.add_argument("-model", type=str, default="EEGNet")
+    parser.add_argument("-experiment_id", type=str, default="exp_001")
     args = parser.parse_args()
  
     set_seed(456)
 
+    # Create experiment directory
+    import os
+    args.saving_dir = f'results/{args.experiment_id}'
+    os.makedirs(args.saving_dir, exist_ok=True)
+    print(f"Experiment ID: {args.experiment_id}")
+    print(f"Saving results to: {args.saving_dir}")
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(device)
+    print(f"Device: {device}")
 
     train_data, train_label, test_data, test_label = dataloader.read_bci_data()
     train_dataset = BCIDataset(train_data, train_label)
@@ -161,8 +169,28 @@ if __name__ == '__main__':
     model.to(device)
     criterion.to(device)
 
-    train_acc_list, train_loss_list, test_acc_list = train(model, train_loader, criterion, optimizer, args)
+    train_acc_list, train_loss_list, test_acc_list = train(model, train_loader, test_loader, criterion, optimizer, args, device)
 
-    plot_train_acc(train_acc_list, args.num_epochs)
-    plot_train_loss(train_loss_list, args.num_epochs)
-    plot_test_acc(test_acc_list, args.num_epochs)
+    plot_train_acc(train_acc_list, args.num_epochs, args.saving_dir)
+    plot_train_loss(train_loss_list, args.num_epochs, args.saving_dir)
+    plot_test_acc(test_acc_list, args.num_epochs, args.saving_dir)
+    
+    # Save experiment configuration
+    config_file = os.path.join(args.saving_dir, 'config.txt')
+    with open(config_file, 'w') as f:
+        f.write(f"Experiment ID: {args.experiment_id}\n")
+        f.write(f"Model: {args.model}\n")
+        f.write(f"Optimizer: {args.optimizer}\n")
+        f.write(f"Learning Rate: {args.lr}\n")
+        f.write(f"Batch Size: {args.batch_size}\n")
+        f.write(f"Epochs: {args.num_epochs}\n")
+        f.write(f"Weight Decay: {args.weight_decay}\n")
+        f.write(f"Dropout: {args.dropout}\n")
+        f.write(f"Device: {device}\n")
+        f.write(f"Final Test Accuracy: {test_acc_list[-1]:.2f}%\n")
+        f.write(f"Best Test Accuracy: {max(test_acc_list):.2f}%\n")
+    
+    print(f"Experiment {args.experiment_id} completed!")
+    print(f"Final test accuracy: {test_acc_list[-1]:.2f}%")
+    print(f"Best test accuracy: {max(test_acc_list):.2f}%")
+    print(f"Results saved to: {args.saving_dir}")
