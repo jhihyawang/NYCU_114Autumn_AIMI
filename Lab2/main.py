@@ -133,6 +133,8 @@ if __name__ == '__main__':
     parser.add_argument("-weight_decay", type=float, default=1e-4)
     parser.add_argument("-dropout", type=float, default=0.5)
     parser.add_argument("-model", type=str, default="EEGNet")
+    parser.add_argument("-activation", type=str, default="ELU", help="Activation function: ELU, ReLU, or LeakyReLU")
+    parser.add_argument("-elu_alpha", type=float, default=1.0, help="Alpha value for ELU activation")
     parser.add_argument("-experiment_id", type=str, default="exp_001")
     args = parser.parse_args()
  
@@ -155,9 +157,10 @@ if __name__ == '__main__':
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
     if args.model.lower() == "deepconvnet":
-        model = DeepConvNet(dropout_rate=args.dropout)
-    else:      
-        model = EEGNet(dropout_rate=args.dropout)
+        model = DeepConvNet(dropout_rate=args.dropout, activation=args.activation, elu_alpha=args.elu_alpha)
+    else:
+        model = EEGNet(dropout_rate=args.dropout, activation=args.activation, elu_alpha=args.elu_alpha)
+
 
     criterion = nn.CrossEntropyLoss()
 
